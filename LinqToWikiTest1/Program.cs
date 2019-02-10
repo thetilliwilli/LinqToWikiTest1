@@ -1,6 +1,7 @@
 using LinqToWiki.Generated;
 using Newtonsoft.Json;
 using RestSharp;
+using ServiceStack.Text;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,6 +17,9 @@ namespace LinqToWikiTest1
     {
         static void Main(string[] args)
         {
+            new App().Go(new AppEnviroment()).ConfigureAwait(false).GetAwaiter().GetResult();
+
+
             //query
             var queryStartTime = DateTime.Now;
                 var query = "SELECT ?video_game ?video_gameLabel ?publisher ?publisherLabel ?publication_date ?platform ?platformLabel ?genre ?genreLabel WHERE { SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\". } ?video_game wdt:P31 wd:Q7889. OPTIONAL { ?video_game wdt:P123 ?publisher. } OPTIONAL { ?video_game wdt:P577 ?publication_date. } OPTIONAL { ?video_game wdt:P400 ?platform. } OPTIONAL { ?video_game wdt:P136 ?genre. } }"
@@ -24,9 +28,11 @@ namespace LinqToWikiTest1
                 var jsonResult = TryGetFromCache(query, ()=> GetResult(query));
             var queryEndTime = DateTime.Now;
 
+            //JsConfig.IncludeNullValues = true;
             var preparingStartTime = DateTime.Now;
-                var gamesDtoResult = JsonConvert.DeserializeObject<ResponseDto>(jsonResult);
-                var games = Program.ToGameInfos(gamesDtoResult);
+            var gamesDtoResult = JsonConvert.DeserializeObject<ResponseDto>(jsonResult);
+            //var gamesDtoResult = ServiceStack.Text.JsonSerializer.DeserializeFromString<ResponseDto>(jsonResult);
+                var games = gamesDtoResult.results.bindings.Select(b => b.ToGameInfo());
             var preparingEndTime = DateTime.Now;
 
 
@@ -46,7 +52,7 @@ namespace LinqToWikiTest1
                 .ForEach(GameInfo.Print)
                 ;
 
-            WriteLine($"Timing: [Query: {(queryEndTime - queryStartTime).TotalMilliseconds}] [Porcessing: {(processingEndTime-processingStartTime).TotalMilliseconds}]");
+            WriteLine($"Timing: [Query: {(queryEndTime - queryStartTime).TotalMilliseconds:F2}ms] [Preparing: {(preparingEndTime - preparingStartTime).TotalMilliseconds:F2}ms] [Porcessing: {(processingEndTime-processingStartTime).TotalMilliseconds:F2}ms]");
             ReadKey();
         }
 
@@ -56,9 +62,6 @@ namespace LinqToWikiTest1
             using (var sha256 = System.Security.Cryptography.SHA256.Create())
             {
                 var cacheKey = sha256.ComputeHash(contentByteArray);
-                //var cacheKeyBase64 = System.Convert.ToBase64String(cacheKey);
-                //var cacheKeyBase64 = System.Text.Encoding.ASCII.GetString(cacheKey);
-                //2.ToString()
                 var cacheKeyBase64 = new string(cacheKey.Select(@byte => @byte.ToString("X")[0]).ToArray());
                 if (File.Exists(cacheKeyBase64))
                     return File.ReadAllText(cacheKeyBase64);
@@ -80,12 +83,10 @@ namespace LinqToWikiTest1
 
         static string GetResult(string query)
         {
-            //var uri = Program.ConvertQueryToUrl(query);
             var request = new RestRequest(Method.GET);
             request.RequestFormat = DataFormat.Json;
             request.AddQueryParameter("format", "json");
             request.AddQueryParameter("query", query);
-            //request.
             //WriteLine(_client.BuildUri(request));
             var result = _client.Execute(request);
             if (result.ErrorException != null)
@@ -101,17 +102,7 @@ namespace LinqToWikiTest1
         static IEnumerable<GameInfo> ToGameInfos(ResponseDto resultDto)
         {
             return resultDto.results.bindings
-                .Select(binding => new GameInfo {
-                    video_gameLabel = binding[nameof(GameInfo.video_gameLabel)].value,
-                    publisherLabel = binding[nameof(GameInfo.publisherLabel)].value,
-                    publication_date = DateTimeOffset.Parse(binding[nameof(GameInfo.publication_date)].value),
-                    platformLabel = binding[nameof(GameInfo.platformLabel)].value,
-                    genreLabel = binding[nameof(GameInfo.genreLabel)].value,
-                    video_game = binding[nameof(GameInfo.video_game)].value,
-                    //publisher = binding[nameof(GameInfo.publisher)].value,
-                    //platform = binding[nameof(GameInfo.platform)].value,
-                    //genre = binding[nameof(GameInfo.genre)].value,
-                });
+                .Select(binding => binding.ToGameInfo());
         }
     }
 
@@ -119,7 +110,7 @@ namespace LinqToWikiTest1
     {
         public string video_gameLabel;
         public string publisherLabel;
-        public DateTimeOffset publication_date;
+        public DateTimeOffset? publication_date;
         public string platformLabel;
         public string genreLabel;
         public string video_game;
@@ -129,7 +120,7 @@ namespace LinqToWikiTest1
 
         public override string ToString()
         {
-            return $"Game: {video_gameLabel,-40} published {publication_date.ToString("yyyy-MM-dd")}";
+            return $"Game: {video_gameLabel,-40} published {publication_date?.ToString("yyyy-MM-dd")}";
         }
 
         public static void Print(GameInfo gameInfo)
@@ -139,17 +130,53 @@ namespace LinqToWikiTest1
     }
 
 
-    struct ResponseDto
+    class ResponseDto
     {
         public Results results;
     }
 
-    struct Results
+    class Results
     {
-        public List<Dictionary<string, ItemDto>> bindings;
+        public List<GameInfoDto> bindings;
     }
 
-    struct ItemDto
+    class GameInfoDto
+    {
+        public ItemDto video_gameLabel;
+        public ItemDto publisherLabel;
+        public ItemDto publication_date;
+        public ItemDto platformLabel;
+        public ItemDto genreLabel;
+        public ItemDto video_game;
+        //public ItemDto publisher;
+        //public ItemDto platform;
+        //public ItemDto genre;
+
+        public static void Print(GameInfo gameInfo)
+        {
+            WriteLine(gameInfo.ToString());
+        }
+    }
+
+    static class DtoExtensions
+    {
+        public static GameInfo ToGameInfo(this GameInfoDto gameInfoDto) => new GameInfo
+        {
+            video_gameLabel = gameInfoDto.video_gameLabel?.value,
+            publisherLabel = gameInfoDto.publisherLabel?.value,
+            publication_date = gameInfoDto.publication_date?.value == null
+                ? (DateTimeOffset?)null
+                : DateTimeOffset.Parse(gameInfoDto.publication_date.value),
+            platformLabel = gameInfoDto.platformLabel?.value,
+            genreLabel = gameInfoDto.genreLabel?.value,
+            video_game = gameInfoDto.video_game?.value,
+            //publisher = binding[nameof(GameInfo.publisher)].value,
+            //platform = binding[nameof(GameInfo.platform)].value,
+            //genre = binding[nameof(GameInfo.genre)].value,
+        };
+    }
+
+    class ItemDto
     {
         public string type;
         public string value;
