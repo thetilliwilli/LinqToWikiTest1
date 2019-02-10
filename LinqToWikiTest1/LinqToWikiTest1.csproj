@@ -85,6 +85,7 @@
     <Compile Include="IAppExecutionContext.cs" />
     <Compile Include="IAppEnviroment.cs" />
     <Compile Include="IApplication.cs" />
+    <Compile Include="IPrintable.cs" />
     <Compile Include="IProcessor.cs" />
     <Compile Include="IResultPrinter.cs" />
     <Compile Include="IServiceCollection.cs" />

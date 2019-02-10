@@ -9,7 +9,15 @@ namespace LinqToWikiTest1
     /// <summary>
     /// Duty - output the result of research in convinient way
     /// </summary>
-    internal class ResultPrinter : IResultPrinter
+    internal class ResultPrinter<T> where T : IPrintable
     {
+        
+        public void Print(IEnumerable<T> resultSet)
+        {
+            resultSet
+                .ToList()
+                .ForEach(x=>x.Print())
+                ;
+        }
     }
 }
