@@ -17,6 +17,7 @@ namespace LinqToWikiTest1
     {
         static void Main(string[] args)
         {
+            MyClass.NotMain();return;
             new App().Go(new AppEnviroment()).ConfigureAwait(false).GetAwaiter().GetResult();
 
             //init services
