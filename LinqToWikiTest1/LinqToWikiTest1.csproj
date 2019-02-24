@@ -94,14 +94,20 @@
   <ItemGroup>
     <Compile Include="App.cs" />
     <Compile Include="AppConfig.cs" />
+    <Compile Include="DataFetcher2.cs" />
     <Compile Include="DataFetcher.cs" />
+    <Compile Include="DataSetPreparer2.cs" />
     <Compile Include="DataSetPreparer.cs" />
     <Compile Include="AppEnviroment.cs" />
     <Compile Include="AppExecutionContext.cs" />
     <Compile Include="DbTest1.cs" />
+    <Compile Include="Domain\SparqlQuery.cs" />
+    <Compile Include="Domain\WdtResponseDto.cs" />
+    <Compile Include="GameInfo2.cs" />
     <Compile Include="IAppExecutionContext.cs" />
     <Compile Include="IAppEnviroment.cs" />
     <Compile Include="IApplication.cs" />
+    <Compile Include="Interface\IPreparer.cs" />
     <Compile Include="IPrintable.cs" />
     <Compile Include="IProcessor.cs" />
     <Compile Include="IResultPrinter.cs" />
@@ -110,15 +116,14 @@
     <Compile Include="Processor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResultPrinter2.cs" />
     <Compile Include="ResultPrinter.cs" />
     <Compile Include="ServiceCollection.cs" />
+    <Compile Include="WdtResponseParser.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-    <None Include="query %283%29.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Database1.mdf" />
