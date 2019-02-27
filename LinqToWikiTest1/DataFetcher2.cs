@@ -1,6 +1,7 @@
 ﻿using LinqToWikiTest1.Domain;
 using RestSharp;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -27,8 +28,11 @@ namespace LinqToWikiTest1
                 if (File.Exists(cacheKeyBase64))
                     return File.ReadAllText(cacheKeyBase64);
 
-                var newContent = retrieveRemoteContent();
-                File.WriteAllText(cacheKeyBase64, newContent);
+                var metrics = new MetricsCollector();
+                var newContent = metrics.LogAndInvoke(()=>retrieveRemoteContent(), "retrieveRemoteContent");
+                var contentWithMeta = $"{{\"query\":{query},\"retrieveDuration\":{(metrics as IEnumerable<Metrics>).Single().Duration.TotalMilliseconds},"
+                    + newContent.Substring(1);
+                File.WriteAllText(cacheKeyBase64, contentWithMeta);
                 return newContent;
             }
         }

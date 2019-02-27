@@ -43,7 +43,7 @@ namespace LinqToWikiTest1
             metricsCollector.LogAndInvoke(() => resultPrinter.Print(resultSet), "printer");
 
             WriteLine("\nTiming");
-            WriteLine(string.Join(", ", metricsCollector.Select(x=>$"[{x}]")));
+            WriteLine(string.Join(", ", (metricsCollector as IEnumerable<string>).Select(x=>$"[{x}]")));
             ReadKey();
         }
 
@@ -58,7 +58,7 @@ namespace LinqToWikiTest1
             var resultPrinter = new ResultPrinter<GameInfo2>();
 
             //query
-            var query = new SparqlQuery("SELECT ?game ?gameLabel ?platform ?platformLabel ?developer ?developerLabel ?creator ?creatorLabel ?publisher ?publisherLabel ?genre ?genreLabel ?game_mode ?game_modeLabel ?distribution ?distributionLabel ?official_website ?official_websiteLabel ?publication_date ?publication_dateLabel ?part_of_the_series ?part_of_the_seriesLabel ?distributor ?distributorLabel ?software_engine ?software_engineLabel ?esrb_rating ?esrb_ratingLabel ?pegi_rating ?pegi_ratingLabel ?review_score ?review_scoreLabel ?title ?titleLabel ?country_of_origin ?country_of_originLabel ?narrative_location ?narrative_locationLabel ?characters ?charactersLabel WHERE { SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\". } ?game wdt:P31 wd:Q7889. OPTIONAL { ?game wdt:P400 ?platform. } OPTIONAL { ?game wdt:P178 ?developer. } OPTIONAL { ?game wdt:P170 ?creator. } OPTIONAL { ?game wdt:P123 ?publisher. } OPTIONAL { ?game wdt:P136 ?genre. } OPTIONAL { ?game wdt:P404 ?game_mode. } OPTIONAL { ?game wdt:P437 ?distribution. } OPTIONAL { ?game wdt:P856 ?official_website. } OPTIONAL { ?game wdt:P577 ?publication_date. } OPTIONAL { ?game wdt:P179 ?part_of_the_series. } OPTIONAL { ?game wdt:P750 ?distributor. } OPTIONAL { ?game wdt:P408 ?software_engine. } OPTIONAL { ?game wdt:P852 ?esrb_rating. } OPTIONAL { ?game wdt:P908 ?pegi_rating. } OPTIONAL { ?game wdt:P444 ?review_score. } OPTIONAL { ?game wdt:P1476 ?title. } OPTIONAL { ?game wdt:P495 ?country_of_origin. } OPTIONAL { ?game wdt:P840 ?narrative_location. } OPTIONAL { ?game wdt:P674 ?characters. } } LIMIT 20");
+            var query = new SparqlQuery("SELECT ?game ?gameLabel ?platform ?platformLabel ?developer ?developerLabel ?publisher ?publisherLabel ?genre ?genreLabel ?game_mode ?game_modeLabel ?official_website ?official_websiteLabel ?publication_date ?publication_dateLabel ?part_of_the_series ?part_of_the_seriesLabel ?software_engine ?software_engineLabel ?pegi_rating ?pegi_ratingLabel ?review_score ?review_scoreLabel ?title ?titleLabel ?country_of_origin ?country_of_originLabel WHERE { SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\". } ?game wdt:P31 wd:Q7889. OPTIONAL { ?game wdt:P400 ?platform. } OPTIONAL { ?game wdt:P178 ?developer. } OPTIONAL { ?game wdt:P123 ?publisher. } OPTIONAL { ?game wdt:P136 ?genre. } OPTIONAL { ?game wdt:P404 ?game_mode. } OPTIONAL { ?game wdt:P856 ?official_website. } OPTIONAL { ?game wdt:P577 ?publication_date. } OPTIONAL { ?game wdt:P179 ?part_of_the_series. } OPTIONAL { ?game wdt:P408 ?software_engine. } OPTIONAL { ?game wdt:P908 ?pegi_rating. } OPTIONAL { ?game wdt:P444 ?review_score. } OPTIONAL { ?game wdt:P1476 ?title. } OPTIONAL { ?game wdt:P495 ?country_of_origin. } }");
 
             var jsonResult = metricsCollector.LogAndInvoke(()=> dataFetcher.Fetch(query), "query");
 
@@ -66,17 +66,17 @@ namespace LinqToWikiTest1
             var games = metricsCollector.LogAndInvoke(() => dataSetPreparer.Prepare(jsonResult), "preparing");
 
             //processing
-            Func<IEnumerable<GameInfo2>, IEnumerable<GameInfo2>> FindSinglePlayerGames = gs => gs.Where(g=>g.GameMode.Contains("single"));
-            var resultSet = metricsCollector.LogAndInvoke(()=> FindSinglePlayerGames(games), "FindSinglePlayerGames");
+            //Func<IEnumerable<GameInfo2>, IEnumerable<GameInfo2>> FindSinglePlayerGames = gs => gs.Where(g=>g.GameMode?.Contains("single")==true);
+            //var resultSet = metricsCollector.LogAndInvoke(()=> FindSinglePlayerGames(games.Take(1000)), "FindSinglePlayerGames");
 
             Func<IEnumerable<GameInfo2>, int> FindTotalCount = gs => gs.Count();
-            var resultCount = metricsCollector.LogAndInvoke(()=>FindTotalCount(resultSet), "FindTotalCount");
+            var resultCount = metricsCollector.LogAndInvoke(()=>FindTotalCount(games), "FindTotalCount");
 
             //output
-            metricsCollector.LogAndInvoke(() => ResultPrinter2.Print<GameInfo2>(resultSet), "ResultPrinter2.Print<GameInfo2>");
+            //metricsCollector.LogAndInvoke(() => ResultPrinter2.Print<GameInfo2>(resultSet), "ResultPrinter2.Print<GameInfo2>");
 
             WriteLine("\nTiming");
-            WriteLine(string.Join(", ", metricsCollector.Select(x => $"[{x}]")));
+            WriteLine(string.Join(", ", (metricsCollector as IEnumerable<string>).Select(x => $"[{x}]")));
             ReadKey();
         }
     }
