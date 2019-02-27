@@ -1,0 +1,19 @@
+SELECT *
+WHERE {
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+  ?game wdt:P31 wd:Q7889.
+  OPTIONAL { ?game wdt:P400 ?platform. }
+  OPTIONAL { ?game wdt:P178 ?developer. }
+  OPTIONAL { ?game wdt:P123 ?publisher. }
+  OPTIONAL { ?game wdt:P136 ?genre. }
+  OPTIONAL { ?game wdt:P404 ?game_mode. }
+  OPTIONAL { ?game wdt:P856 ?official_website. }
+  OPTIONAL { ?game wdt:P577 ?publication_date. }
+  OPTIONAL { ?game wdt:P179 ?part_of_the_series. }
+  OPTIONAL { ?game wdt:P408 ?software_engine. }
+  OPTIONAL { ?game wdt:P908 ?pegi_rating. }
+  OPTIONAL { ?game wdt:P444 ?review_score. }
+  OPTIONAL { ?game wdt:P1476 ?title. }
+  OPTIONAL { ?game wdt:P495 ?country_of_origin. }
+}
+limit 5
