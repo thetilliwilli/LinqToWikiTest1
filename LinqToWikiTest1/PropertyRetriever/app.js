@@ -1,18 +1,27 @@
 const { Sort, ToAttributedProperty } = require("./util.js");
-const { QueryParser } = require("./query-parser");
+const { Parser } = require("sparqljs");
+const fs = require("fs");
+const { prefixes } = require("./prefixes");
 
-// var headers = `?game ?platform ?developer ?creator ?publisher ?genre ?game_mode ?distribution ?official_website ?publication_date ?part_of_the_series ?distributor ?software_engine ?esrb_rating ?pegi_rating ?review_score ?title ?country_of_origin ?narrative_location ?characters`;
+
+const parser = new Parser(prefixes);
+
 var inputString = process.argv[2];
+inputString = fs.readFileSync("./query1_explicit_select.rq").toString();
 
 var separatorSymbol = "_";
 var bindingPrefix = "?";
 var labelAppendix = "Label";
 var idAppendix = "Id";
 var disallowedNames = /[^a-zA-Z_]/;
+var discardLabelVariable = s=>s.slice(-"Label".length) !== "Label";
 
-var result = 
-    QueryParser.Parse(inputString)
-    .variables
+var queryAst = parser.parse(inputString);
+
+var result = queryAst.variables
+    .map(s=>s.slice(1))
+    .filter(discardLabelVariable)
+    .validate(console.log)
     .sort(Sort)
     .validate(function InvalidParameterCountRule(arr) { return arr.length < 1 })
     .validateEach(function DisallowedParameterNameRule(s) { return disallowedNames.test(s) }) //validation check
