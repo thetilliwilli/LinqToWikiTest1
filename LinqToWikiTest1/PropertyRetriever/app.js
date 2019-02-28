@@ -1,5 +1,6 @@
 const { Sort, ToAttributedProperty } = require("./util.js");
-const { Parser } = require("sparqljs");
+const { QueryParser } = require("./query-parser2");
+const { Parser } = require("sparqljs")
 const fs = require("fs");
 const { prefixes } = require("./prefixes");
 
@@ -8,6 +9,7 @@ const parser = new Parser(prefixes);
 
 var inputString = process.argv[2];
 inputString = fs.readFileSync("./query1_explicit_select.rq").toString();
+// inputString = fs.readFileSync("./query2_select_all.rq").toString();
 
 var separatorSymbol = "_";
 var bindingPrefix = "?";
@@ -16,10 +18,13 @@ var idAppendix = "Id";
 var disallowedNames = /[^a-zA-Z_]/;
 var discardLabelVariable = s=>s.slice(-"Label".length) !== "Label";
 
-var queryAst = parser.parse(inputString);
+// var queryAst = parser.parse(inputString);
+var parsedQuery = QueryParser.Parse(inputString);
+var replacedQuery = QueryParser.InjectLabels(parsedQuery);
+console.log(replacedQuery);
 
+process.exit();
 var result = queryAst.variables
-    .map(s=>s.slice(1))
     .filter(discardLabelVariable)
     .validate(console.log)
     .sort(Sort)
@@ -35,5 +40,5 @@ var result = queryAst.variables
     .join("\n")
     ;
 
-console.log(result.length);
-console.log(result);
+// console.log(result.length);
+// console.log(result);
