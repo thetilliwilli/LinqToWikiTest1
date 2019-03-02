@@ -1,44 +1,19 @@
-const { Sort, ToAttributedProperty } = require("./util.js");
-const { QueryParser } = require("./query-parser2");
-const { Parser } = require("sparqljs")
-const fs = require("fs");
-const { prefixes } = require("./prefixes");
+const inputGetter = require("./inputGetter");
+const { QueryParser } = require("./query-parser");
+const csExporter = require("./exportToCs")
 
+inputGetter.getInputString()
+    .then(inputString => {
+        var xxx = QueryParser.Parse(inputString);
+        console.log("\n");
+        console.log(xxx.composition);
 
-const parser = new Parser(prefixes);
+        console.log("\n");
+        console.log("-".repeat(100));
+        console.log("\n");
 
-var inputString = process.argv[2];
-inputString = fs.readFileSync("./query1_explicit_select.rq").toString();
-// inputString = fs.readFileSync("./query2_select_all.rq").toString();
-
-var separatorSymbol = "_";
-var bindingPrefix = "?";
-var labelAppendix = "Label";
-var idAppendix = "Id";
-var disallowedNames = /[^a-zA-Z_]/;
-var discardLabelVariable = s=>s.slice(-"Label".length) !== "Label";
-
-// var queryAst = parser.parse(inputString);
-var parsedQuery = QueryParser.Parse(inputString);
-var replacedQuery = QueryParser.InjectLabels(parsedQuery);
-console.log(replacedQuery);
-
-process.exit();
-var result = queryAst.variables
-    .filter(discardLabelVariable)
-    .validate(console.log)
-    .sort(Sort)
-    .validate(function InvalidParameterCountRule(arr) { return arr.length < 1 })
-    .validateEach(function DisallowedParameterNameRule(s) { return disallowedNames.test(s) }) //validation check
-    .map(s => ({ bindName: s, name: s.split(separatorSymbol).map(s => s[0].toUpperCase() + s.slice(1)).join("") }))//replace "_" char with nothing and make next character upper cased. saved initial names aside with new values
-    .mut(arr => [
-        arr.map(s => [s.bindName + labelAppendix, s.name]).map(ToAttributedProperty).flat(),
-        arr.map(s => [s.bindName, s.name + idAppendix]).map(ToAttributedProperty).flat()
-    ])
-    .validate(function InvalidPropertyCountRule(arr) { return ((arr[0].length !== arr[1].length) || arr[0].length % 2 !== 0) }) //validation check
-    .flat()
-    .join("\n")
+        var yyy = csExporter.GenerateCsClass("YYYY", xxx.variables);
+        console.log(yyy);
+    })
+    .catch(console.error)
     ;
-
-// console.log(result.length);
-// console.log(result);

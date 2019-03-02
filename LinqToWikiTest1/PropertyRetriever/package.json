@@ -9,7 +9,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "sparqljs": "^2.2.1"
-  }
+  "dependencies": {}
 }
