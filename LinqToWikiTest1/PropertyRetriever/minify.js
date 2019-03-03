@@ -1,4 +1,5 @@
-var originalLabelAppendix = "Label";
+
+const { IsLabelVariable, originalLabelAppendix } = require("./util");
 
 function* azGenerator() { for (var i = "a".charCodeAt(0); i <= "z".charCodeAt(0); i++) yield String.fromCharCode(i); return; }
 function* AZGenerator() { for (var i = "A".charCodeAt(0); i <= "Z".charCodeAt(0); i++) yield String.fromCharCode(i); return; }
@@ -31,11 +32,10 @@ function GenerateShortener(names) {
     names = names.sort((a, b) => a.localeCompare(b));
     var shortDic = GenerateShorteningDictionary(names.length);
     function Shortener(name) {
-        var withLabel = name.slice(-originalLabelAppendix.length) === originalLabelAppendix;
-        if (withLabel) {
+        if (IsLabelVariable(name)) {
             var index = names.indexOf(name.slice(0, -originalLabelAppendix.length));
             if (index === -1) throw new Error("Out of range");
-            return shortDic[index]+originalLabelAppendix;
+            return shortDic[index] + originalLabelAppendix;
         }
         else {
             var index = names.indexOf(name);
@@ -43,9 +43,11 @@ function GenerateShortener(names) {
             return shortDic[index];
         }
 
-        
+
     }
-    Shortener.shortDic = shortDic;
+    Shortener.shortDic = names
+        .map(name => ({ name: name, short: Shortener(name) }))
+        ;
     return Shortener;
 }
 

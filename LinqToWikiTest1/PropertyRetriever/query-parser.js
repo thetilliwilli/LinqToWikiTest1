@@ -1,29 +1,17 @@
 const minify = require("./minify");
+const { AddLabel, AddMark, IsNotLabelVariable, RemoveQuestionMark } = require("./util");
 
-var questionMarkChar = "?";
-var resultLabelAppendix = "L";
 
 function RemoveDublicates(item, index, array) {
     return array.indexOf(item) === index;
 }
 
-function AddLabel(variable) {
-    return variable + resultLabelAppendix;
+function AddRdfsLabelClause(variable) {
+    return `${AddMark(variable)} rdfs:label ${AddMark(AddLabel(variable))}. `;
+    //same in functionnal programming style (with curring)
+    // return `${AddMark(variable)} rdfs:label ${[variable].map(AddMark).map(AddLabel).join()}`;
 }
 
-function AddLabelFilterClause(variable) {
-    return `FILTER(LANG(${variable})="en")`
-}
-
-function AddMark(variable) {
-    return "?" + variable;
-}
-
-function Sort(a, b) { return a.localeCompare(b); }
-
-function IsNotLabelVariable(variable) { return variable.slice(-"Label".length) !== "Label"; }
-
-function RemoveQuestionMark(variable) { return variable.slice(questionMarkChar.length); }
 
 class QueryParser {
 
@@ -51,12 +39,11 @@ class QueryParser {
             ...variables.map(shortener).map(AddMark),
             ...variables.map(shortener).map(AddMark).map(AddLabel),
         ].join(" ").trim();
-        var languageFilters = variables.map(shortener).map(AddMark).map(AddLabel).map(AddLabelFilterClause).join("\n");
         var afterWhereAndFuther = body.slice(firstParenthesisAfterWhereAnchor + 1);
         afterWhereAndFuther = this.InjectOptionalRdfsNames(afterWhereAndFuther);
-        afterWhereAndFuther = this.RemoveLabelServiceDeclaration(afterWhereAndFuther);
+        afterWhereAndFuther = this.ReplaceLabelServiceDeclaration(afterWhereAndFuther, variables, shortener);
 
-        var composition = `${beforeSelectedIncluded} ${outVariables} where { \n${languageFilters}\n${afterWhereAndFuther}`
+        var composition = `${beforeSelectedIncluded} ${outVariables} where {\n${afterWhereAndFuther}`
             .replace(/\n/img, " ")
             .replace(/  /img, " ")
             ;
@@ -71,7 +58,6 @@ class QueryParser {
 
     /** OPTIONAL { ?game wdt:P400 ?platform. } -> OPTIONAL { ?game wdt:P400 ?platform. ?platform rdfs:label ?platformLabel. } */
     static InjectOptionalRdfsNames(afterWhereAndFuther) {
-        // console.log("afterWhereAndFuther", afterWhereAndFuther);
         var matchesOfOptions = afterWhereAndFuther.match(/OPTIONAL\W[^}]+\}/img);
         if (matchesOfOptions === null)
             return afterWhereAndFuther;
@@ -94,19 +80,20 @@ class QueryParser {
         return `${afterWhereAndFuther.slice(0, firstMatchIndex)} ${optionalsWithRdfsName} ${afterWhereAndFuther.slice(lastMatchIndex + lastMatchLength)}`;
     }
 
-    static RemoveLabelServiceDeclaration(afterWhereAndFuther) {
-        // console.log(afterWhereAndFuther);
+    static ReplaceLabelServiceDeclaration(afterWhereAndFuther, variables, shortener) {
         var match = afterWhereAndFuther.match(/SERVICE\Wwikibase:label\W[^}]+\}/im);
         var before = afterWhereAndFuther.slice(0, match.index);
         var after = afterWhereAndFuther.slice(match.index + match[0].length);
-        return before + after;
+        var rdfsLabelClauses = variables
+            .map(shortener)
+            .map(AddRdfsLabelClause)
+            .join("\n");
+        var labelServiceDeclaration = `SERVICE wikibase:label {bd:serviceParam wikibase:language "en". ${rdfsLabelClauses}}`;
+        return `${before} ${labelServiceDeclaration} ${after}`;
     }
 
     static InjectShortNames(inputString, marklessVariables) {
-        // var marklessVariables = markedVariables
-        //     .map(v => v.slice(1))
-        //     ;
-        var shortener = minify.GenerateShortener(marklessVariables); // delete question mark "?"
+        var shortener = minify.GenerateShortener(marklessVariables);
 
         var varMatch = undefined;
         var cuttedInputString = inputString;
